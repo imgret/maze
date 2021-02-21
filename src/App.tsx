@@ -85,9 +85,11 @@ function App() {
   return (
     <div className="App">
       <Canvas width={windowSize.width} height={windowSize.height} draw={drawMaze} />
+      <input value={mazeWidth} onChange={(event) => setMazeWidth(Number(event.target.value))} />
+      <input value={mazeHeight} onChange={(event) => setMazeHeight(Number(event.target.value))} />
       <button
         onClick={() => {
-          setMaze(new Maze(36, 25));
+          setMaze(new Maze(mazeWidth, mazeHeight));
         }}
       >
         New maze
