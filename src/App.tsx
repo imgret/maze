@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
 import Canvas from "./components/Canvas";
 import useWindowSize from "./hooks/useWindowSize";
@@ -10,16 +10,12 @@ interface Cell {
   x1: number;
   y1: number;
   walls: number;
-  width: number;
-  height: number;
   size: number;
 }
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const [mazeWidth, setMazeWidth] = useState(1);
-  const [mazeHeight, setMazeHeight] = useState(1);
+  const [mazeWidth, setMazeWidth] = useState(10);
+  const [mazeHeight, setMazeHeight] = useState(10);
 
   const [maze, setMaze] = useState(new Maze(mazeWidth, mazeHeight));
 
@@ -29,16 +25,19 @@ function App() {
 
   const drawCellSide = (ctx: CanvasRenderingContext2D, isWall: boolean, toX: number, toY: number) => {
     isWall ? ctx.lineTo(toX, toY) : ctx.moveTo(toX, toY);
-    ctx.stroke();
   };
 
   const drawCell = (ctx: CanvasRenderingContext2D, cell: Cell) => {
-    ctx.beginPath();
+    // Start cell drawing at cell's NW corner and move through NE -> SE -> SW -> NW
     ctx.moveTo(cell.x0, cell.y0);
+
     drawCellSide(ctx, isWall(cell.walls, N), cell.x1, cell.y0);
     drawCellSide(ctx, isWall(cell.walls, E), cell.x1, cell.y1);
     drawCellSide(ctx, isWall(cell.walls, S), cell.x0, cell.y1);
     drawCellSide(ctx, isWall(cell.walls, W), cell.x0, cell.y0);
+
+    // Duplicate north wall to get appropriate lineJoin in NW corner
+    if (isWall(cell.walls, N)) ctx.lineTo(cell.x1, cell.y0);
   };
 
   const drawMaze = (ctx: CanvasRenderingContext2D) => {
@@ -46,8 +45,7 @@ function App() {
     const canvasHeight = ctx.canvas.height;
 
     const cell: Cell = {
-      width: Math.floor(canvasWidth / maze.size.width),
-      height: Math.floor(canvasHeight / maze.size.height),
+      // Length of cell wall is min(cellWidth, cellHeight)
       size: Math.min(Math.floor(canvasWidth / maze.size.width), Math.floor(canvasHeight / maze.size.height)),
       x0: 0,
       y0: 0,
@@ -56,14 +54,19 @@ function App() {
       walls: 0,
     };
 
+    // Calculate offset from top left corner of canvas (later used to center maze in canvas)
     // Shift right by 1 bit to divide by 2 without remainder
     const offsetX = (canvasWidth - cell.size * maze.size.width) >> 1;
     const offsetY = (canvasHeight - cell.size * maze.size.height) >> 1;
 
-    console.log(cell.width, cell.height, cell.size);
-
+    // Clear canvas before drawing
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "bevel";
+
+    // Draw every cell of maze grid
     for (let row = 0; row < maze.grid.length; row++) {
       cell.y0 = row * cell.size + offsetY;
       cell.y1 = cell.y0 + cell.size;
@@ -75,16 +78,16 @@ function App() {
         drawCell(ctx, cell);
       }
     }
+
+    ctx.stroke();
   };
 
   return (
     <div className="App">
-      <Canvas ref={canvasRef} width={windowSize.width} height={windowSize.height} draw={drawMaze} />
+      <Canvas width={windowSize.width} height={windowSize.height} draw={drawMaze} />
       <button
         onClick={() => {
-          const newMaze = new Maze(36, 25);
-          newMaze.create();
-          setMaze(newMaze);
+          setMaze(new Maze(36, 25));
         }}
       >
         New maze
