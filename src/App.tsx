@@ -11,30 +11,27 @@ interface Cell {
   walls: number;
   width: number;
   height: number;
+  size: number;
 }
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [maze, setMaze] = useState(new Maze(5, 5));
+  const [mazeWidth, setMazeWidth] = useState(1);
+  const [mazeHeight, setMazeHeight] = useState(1);
 
-  const drawCanvasBorder = (ctx: CanvasRenderingContext2D) => {
-    ctx.lineWidth = 4;
-    ctx.strokeRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.lineWidth = 1;
-  };
+  const [maze, setMaze] = useState(new Maze(mazeWidth, mazeHeight));
 
   const isWall = (cell: number, direction: number) => (cell & direction) === 0;
 
   const drawCellSide = (ctx: CanvasRenderingContext2D, isWall: boolean, toX: number, toY: number) => {
-    if (isWall) {
-      ctx.lineTo(toX, toY);
-    } else {
-      ctx.moveTo(toX, toY);
-    }
+    isWall ? ctx.lineTo(toX, toY) : ctx.moveTo(toX, toY);
+    ctx.stroke();
   };
 
   const drawCell = useCallback((ctx: CanvasRenderingContext2D, cell: Cell) => {
+    ctx.beginPath();
+    ctx.moveTo(cell.x0, cell.y0);
     drawCellSide(ctx, isWall(cell.walls, N), cell.x1, cell.y0);
     drawCellSide(ctx, isWall(cell.walls, E), cell.x1, cell.y1);
     drawCellSide(ctx, isWall(cell.walls, S), cell.x0, cell.y1);
@@ -46,15 +43,10 @@ function App() {
       const canvasWidth = ctx.canvas.width;
       const canvasHeight = ctx.canvas.height;
 
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-      drawCanvasBorder(ctx);
-
-      ctx.beginPath();
-
       const cell: Cell = {
-        width: canvasWidth / maze.size.width,
-        height: canvasHeight / maze.size.height,
+        width: Math.floor(canvasWidth / maze.size.width),
+        height: Math.floor(canvasHeight / maze.size.height),
+        size: Math.min(Math.floor(canvasWidth / maze.size.width), Math.floor(canvasHeight / maze.size.height)),
         x0: 0,
         y0: 0,
         x1: 0,
@@ -62,22 +54,25 @@ function App() {
         walls: 0,
       };
 
-      for (let row = 0; row < maze.grid.length; row++) {
-        cell.y0 = row * cell.height;
-        cell.y1 = cell.y0 + cell.height;
-        for (let column = 0; column < maze.grid[row].length; column++) {
-          cell.x0 = column * cell.width;
-          cell.x1 = cell.x0 + cell.width;
-          cell.walls = maze.grid[row][column];
+      // Shift right by 1 bit to divide by 2 without remainder
+      const offsetX = (canvasWidth - cell.size * maze.size.width) >> 1;
+      const offsetY = (canvasHeight - cell.size * maze.size.height) >> 1;
 
-          ctx.moveTo(cell.x0, cell.y0);
+      console.log(cell.width, cell.height, cell.size);
+
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      for (let row = 0; row < maze.grid.length; row++) {
+        cell.y0 = row * cell.size + offsetY;
+        cell.y1 = cell.y0 + cell.size;
+        for (let column = 0; column < maze.grid[row].length; column++) {
+          cell.x0 = column * cell.size + offsetX;
+          cell.x1 = cell.x0 + cell.size;
+          cell.walls = maze.grid[row][column];
 
           drawCell(ctx, cell);
         }
       }
-      ctx.moveTo(canvasWidth, canvasHeight);
-      ctx.closePath();
-      ctx.stroke();
     },
     [drawCell, maze]
   );
@@ -91,10 +86,10 @@ function App() {
 
   return (
     <div className="App">
-      <Canvas ref={canvasRef} width={800} height={800} />
+      <Canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight} />
       <button
         onClick={() => {
-          const newMaze = new Maze(25, 25);
+          const newMaze = new Maze(36, 25);
           setMaze(newMaze);
         }}
       >
