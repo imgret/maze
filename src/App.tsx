@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import "./App.css";
 import Canvas from "./components/Canvas";
 import useWindowSize from "./hooks/useWindowSize";
-import Maze, { N, S, E, W } from "./Maze/Maze";
+import Maze, { N, S, E, W, Walls } from "./Maze/Maze";
 
 interface Cell {
   x0: number;
   y0: number;
   x1: number;
   y1: number;
-  walls: number;
+  walls: Walls;
   size: number;
 }
 
