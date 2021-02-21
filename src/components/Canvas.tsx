@@ -1,7 +1,7 @@
 import React, { DetailedHTMLProps, forwardRef, useEffect, useRef } from "react";
 
 interface CanvasProps extends DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> {
-  draw?: (context: CanvasRenderingContext2D) => void;
+  draw: (context: CanvasRenderingContext2D) => void;
 }
 
 const Canvas = forwardRef((props: CanvasProps, ref) => {
@@ -21,9 +21,19 @@ const Canvas = forwardRef((props: CanvasProps, ref) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      const context = canvas?.getContext("2d");
+      const context = canvas.getContext("2d");
       if (context) {
-        draw?.(context);
+        let animationFrameId: number;
+
+        const render = () => {
+          draw(context);
+          animationFrameId = window.requestAnimationFrame(render);
+        };
+        render();
+
+        return () => {
+          window.cancelAnimationFrame(animationFrameId);
+        };
       }
     }
   }, [draw]);

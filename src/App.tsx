@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import "./App.css";
 import Canvas from "./components/Canvas";
 import useWindowSize from "./hooks/useWindowSize";
