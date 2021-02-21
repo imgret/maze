@@ -15,7 +15,8 @@ class Maze {
   public constructor(private readonly width: number, private readonly height: number) {
     this.width = width;
     this.height = height;
-    this.maze = [[]];
+    this.maze = new Array(height).fill(null).map(() => new Array(width).fill(0));
+    this.carvePassagesFrom(0, 0);
   }
 
   public get grid(): readonly number[][] {
@@ -42,11 +43,6 @@ class Maze {
         this.carvePassagesFrom(newX, newY);
       }
     }
-  }
-
-  public create() {
-    this.maze = new Array(this.height).fill(null).map(() => new Array(this.width).fill(0));
-    this.carvePassagesFrom(0, 0);
   }
 
   public toString() {
