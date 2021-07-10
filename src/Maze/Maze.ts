@@ -6,8 +6,8 @@ import { between, shuffle } from "../utility/Utility";
 export type Walls = RangeOf<0b1111>;
 
 export const [N, S, E, W] = [0b0001, 0b0010, 0b0100, 0b1000];
-const DX = { [N]: 0, [S]: 0, [E]: 1, [W]: -1 };
-const DY = { [N]: -1, [S]: 1, [E]: 0, [W]: 0 };
+const MOVE_COL = { [N]: 0, [S]: 0, [E]: 1, [W]: -1 };
+const MOVE_ROW = { [N]: -1, [S]: 1, [E]: 0, [W]: 0 };
 const OPPOSITE = { [N]: S, [S]: N, [E]: W, [W]: E };
 
 /**
@@ -17,11 +17,10 @@ const OPPOSITE = { [N]: S, [S]: N, [E]: W, [W]: E };
 class Maze {
   private maze: Walls[][];
 
-  public constructor(private readonly width: number, private readonly height: number) {
-    this.width = width;
-    this.height = height;
-    this.maze = new Array(height).fill(null).map(() => new Array(width).fill(0));
-    this.carvePassagesFrom(0, 0);
+  public constructor(private readonly cols: number, private readonly rows: number) {
+    this.cols = cols;
+    this.rows = rows;
+    this.maze = new Array(rows).fill(null).map(() => new Array(cols).fill(0));
   }
 
   public get grid(): readonly Walls[][] {
@@ -29,33 +28,56 @@ class Maze {
   }
 
   public get size(): { width: number; height: number } {
-    return { width: this.width, height: this.height };
+    return { width: this.cols, height: this.rows };
   }
 
-  private carvePassagesFrom(x: number, y: number) {
+  public reset() {
+    this.maze = new Array(this.rows).fill(null).map(() => new Array(this.cols).fill(0))
+  }
+
+  public generateMazeFrom(col: number, row: number) {
     const directions = shuffle([N, S, E, W]);
 
     for (const direction of directions) {
-      const [newX, newY] = [x + DX[direction], y + DY[direction]];
+      const [newCol, newRow] = [col + MOVE_COL[direction], row + MOVE_ROW[direction]];
 
       if (
-        between(newY, 0, this.maze.length - 1) &&
-        between(newX, 0, this.maze[newY].length - 1) &&
-        this.maze[newY][newX] === 0
+        between(newRow, 0, this.maze.length - 1) &&
+        between(newCol, 0, this.maze[newRow].length - 1) &&
+        this.maze[newRow][newCol] === 0
       ) {
-        this.maze[y][x] |= direction;
-        this.maze[newY][newX] |= OPPOSITE[direction];
-        this.carvePassagesFrom(newX, newY);
+        this.maze[row][col] |= direction;
+        this.maze[newRow][newCol] |= OPPOSITE[direction];
+        this.generateMazeFrom(newCol, newRow);
+      }
+    }
+  }
+
+  public * mazeGeneratorFrom(col: number, row: number): Generator<void, void, void> {
+    const directions = shuffle([N, S, E, W]);
+
+    for (const direction of directions) {
+      const [newCol, newRow] = [col + MOVE_COL[direction], row + MOVE_ROW[direction]];
+
+      if (
+        between(newRow, 0, this.maze.length - 1) &&
+        between(newCol, 0, this.maze[newRow].length - 1) &&
+        this.maze[newRow][newCol] === 0
+      ) {
+        this.maze[row][col] |= direction;
+        this.maze[newRow][newCol] |= OPPOSITE[direction];
+        yield;
+        yield * this.mazeGeneratorFrom(newCol, newRow);
       }
     }
   }
 
   public toString() {
     let maze: string = "";
-    maze += " " + "_".repeat(this.width * 2 - 1) + "\n";
-    for (let y = 0; y < this.height; y++) {
+    maze += " " + "_".repeat(this.cols * 2 - 1) + "\n";
+    for (let y = 0; y < this.rows; y++) {
       maze += "|";
-      for (let x = 0; x < this.width; x++) {
+      for (let x = 0; x < this.cols; x++) {
         maze += (this.maze[y][x] & S) !== 0 ? " " : "_";
         if ((this.maze[y][x] & E) !== 0) {
           maze += ((this.maze[y][x] | this.maze[y][x + 1]) & S) !== 0 ? " " : "_";

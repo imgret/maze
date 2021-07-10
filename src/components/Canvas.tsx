@@ -1,10 +1,11 @@
 import React, { DetailedHTMLProps, forwardRef, useEffect, useRef } from "react";
 
 interface CanvasProps extends DetailedHTMLProps<React.CanvasHTMLAttributes<HTMLCanvasElement>, HTMLCanvasElement> {
-  draw: (context: CanvasRenderingContext2D) => void;
+  draw: (context: CanvasRenderingContext2D, frameCount: number) => void;
 }
 
-const Canvas = forwardRef((props: CanvasProps, ref) => {
+// Reference: https://medium.com/@pdx.lucasm/canvas-with-react-js-32e133c05258
+const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>((props, ref) => {
   const { draw, ...rest } = props;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -23,10 +24,12 @@ const Canvas = forwardRef((props: CanvasProps, ref) => {
     if (canvas) {
       const context = canvas.getContext("2d");
       if (context) {
+        let frameCount = 0;
         let animationFrameId: number;
 
-        const render = () => {
-          draw(context);
+        const render = async () => {
+          frameCount++;
+          draw(context, frameCount)
           animationFrameId = window.requestAnimationFrame(render);
         };
         render();

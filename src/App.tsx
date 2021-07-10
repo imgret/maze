@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import Canvas from "./components/Canvas";
 import useWindowSize from "./hooks/useWindowSize";
@@ -18,6 +18,16 @@ function App() {
   const [mazeHeight, setMazeHeight] = useState(10);
 
   const [maze, setMaze] = useState(new Maze(mazeWidth, mazeHeight));
+
+  useEffect(() => {
+    const animateMazeDrawing = async () => {
+      const generator = maze.mazeGeneratorFrom(0, 0);
+      while(!generator.next().done) {
+        await new Promise((resolve) => setTimeout(resolve))
+      }
+    }
+    animateMazeDrawing();
+  }, [maze])
 
   const windowSize = useWindowSize();
 
